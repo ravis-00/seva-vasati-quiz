@@ -1,5 +1,4 @@
 // questions.js
-// This file contains all the question banks for the different projects.
 
 const projectQuizzes = {
   "seva_vasati": {
@@ -33,4 +32,3 @@ const projectQuizzes = {
     ]
   }
 };
-
