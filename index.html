@@ -1,215 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seva Vasati - Process Awareness Test</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .quiz-option:hover {
-            background-color: #f0f9ff; /* light blue on hover */
-        }
-        .quiz-option input:checked + label {
-            background-color: #e0f2fe; /* slightly darker blue when selected */
-            border-color: #0284c7;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Seva Vasati - Process Awareness Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .quiz-option:hover {
+      background-color: #f0f9ff;
+    }
+    .quiz-option input:checked + label {
+      background-color: #e0f2fe;
+      border-color: #0284c7;
+    }
+  </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
 
-    <div id="quiz-container" class="w-full max-w-3xl mx-auto">
+  <div id="quiz-container" class="w-full max-w-3xl mx-auto">
 
-        <!-- Start Screen -->
-        <div id="start-screen" class="bg-white p-8 rounded-xl shadow-lg text-center">
-            <h1 id="quiz-title" class="text-3xl font-bold text-slate-800 mb-4"></h1>
-            <p class="text-slate-600 mb-6">This test consists of <span id="question-count-info"></span> randomly selected questions to assess your process awareness.</p>
-            <p class="text-slate-600 mb-8">Click the button below to begin.</p>
-            <button onclick="startQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
-                Start Test
-            </button>
-        </div>
-
-        <!-- Quiz Screen -->
-        <div id="quiz-screen" class="hidden">
-            <div class="bg-white p-8 rounded-xl shadow-lg">
-                <h2 id="quiz-header" class="text-2xl font-bold text-slate-800 mb-6 border-b pb-4"></h2>
-                <div id="questions-wrapper" class="space-y-8">
-                    <!-- Questions will be dynamically inserted here -->
-                </div>
-                <div class="mt-8 text-center">
-                    <button onclick="submitQuiz()" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-colors duration-300 shadow-md">
-                        Submit Answers
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Result Screen -->
-        <div id="result-screen" class="hidden">
-            <div class="bg-white p-8 rounded-xl shadow-lg text-center">
-                <h2 class="text-3xl font-bold text-slate-800 mb-4">Test Complete!</h2>
-                <p id="result-quiz-title" class="text-slate-600 mb-2"></p>
-                <p class="text-2xl font-semibold text-slate-700 mt-6 mb-2">Your Score:</p>
-                <p id="score-text" class="text-5xl font-bold text-sky-600 mb-8">0 / 0</p>
-                <div id="feedback-text" class="text-slate-600 mb-8"></div>
-                <button onclick="restartQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
-                    Take This Test Again
-                </button>
-            </div>
-        </div>
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <img src="logo.png" alt="Seva Vasati Logo" class="h-20 mx-auto" />
     </div>
 
-    <!-- External script for question banks -->
-    <script src="questions.js"></script>
+    <!-- Start Screen -->
+    <div id="start-screen" class="bg-white p-8 rounded-xl shadow-lg text-center">
+      <h1 id="quiz-title" class="text-3xl font-bold text-slate-800 mb-4"></h1>
+      <p class="text-slate-600 mb-2">Please enter your details to begin:</p>
+      <div class="mb-6 space-y-4 text-left">
+        <input type="text" id="employee-name" placeholder="Employee Name" class="w-full p-3 border rounded" />
+        <input type="text" id="employee-id" placeholder="Employee ID" class="w-full p-3 border rounded" />
+      </div>
+      <p class="text-slate-600 mb-4">This test consists of <span id="question-count-info"></span> randomly selected questions.</p>
+      <button onclick="startQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
+        Start Test
+      </button>
+    </div>
 
-    <script>
-        // --- PILOT CONFIGURATION ---
-        // This is set to the Seva Vasati project for the pilot.
-        const PILOT_PROJECT_KEY = "seva_vasati"; 
-        
-        const NUMBER_OF_QUESTIONS_TO_SELECT = 5;
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="hidden">
+      <div class="bg-white p-8 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h2 id="quiz-header" class="text-2xl font-bold text-slate-800 border-b pb-2"></h2>
+          <div id="timer" class="text-right text-slate-500 text-sm"></div>
+        </div>
+        <div id="questions-wrapper" class="space-y-8"></div>
+        <div class="mt-8 text-center">
+          <button onclick="submitQuiz()" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-colors duration-300 shadow-md">
+            Submit Answers
+          </button>
+        </div>
+      </div>
+    </div>
 
-        // The 'projectQuizzes' object is loaded from questions.js
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden">
+      <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+        <h2 class="text-3xl font-bold text-slate-800 mb-4">Test Complete!</h2>
+        <p id="result-quiz-title" class="text-slate-600 mb-2"></p>
+        <p class="text-2xl font-semibold text-slate-700 mt-6 mb-2">Your Score:</p>
+        <p id="score-text" class="text-5xl font-bold text-sky-600 mb-4">0 / 0</p>
+        <div id="feedback-text" class="text-slate-600 mb-4"></div>
+        <div id="certificate-download" class="mt-6"></div>
+        <button onclick="restartQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
+          Take This Test Again
+        </button>
+      </div>
+    </div>
+  </div>
 
-        let selectedQuestions = [];
-        let currentProjectKey = PILOT_PROJECT_KEY;
+  <!-- Question Bank -->
+  <script src="questions.js"></script>
 
-        // --- DOM ELEMENTS ---
-        const startScreen = document.getElementById('start-screen');
-        const quizScreen = document.getElementById('quiz-screen');
-        const resultScreen = document.getElementById('result-screen');
-        
-        /**
-         * Initializes the application for the pilot project.
-         */
-        function initialize() {
-            // Check if question bank was loaded
-            if (typeof projectQuizzes === 'undefined' || !projectQuizzes[currentProjectKey]) {
-                document.body.innerHTML = `<div class="w-full max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
-                    <h1 class="text-2xl font-bold text-red-600">Configuration Error</h1>
-                    <p class="text-slate-600 mt-4">Could not load the question bank. Ensure <strong>questions.js</strong> is in the same folder and the project key "<strong>${currentProjectKey}</strong>" is correct.</p>
-                    </div>`;
-                return;
-            }
-            showStartScreen();
+  <script>
+    const PILOT_PROJECT_KEY = "seva_vasati";
+    const NUMBER_OF_QUESTIONS_TO_SELECT = 5;
+    let selectedQuestions = [];
+
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+
+    function initialize() {
+      const project = projectQuizzes?.[PILOT_PROJECT_KEY];
+      if (!project) {
+        document.body.innerHTML = `<div class="text-center p-8"><h2 class="text-2xl font-bold text-red-600">Configuration Error</h2><p>Ensure <strong>questions.js</strong> is correctly linked and has the project key "<strong>${PILOT_PROJECT_KEY}</strong>".</p></div>`;
+        return;
+      }
+
+      const storedScore = localStorage.getItem(`score_${PILOT_PROJECT_KEY}`);
+      if (storedScore && parseFloat(storedScore) >= 80) {
+        document.body.innerHTML = `<div class="text-center p-8"><h2 class="text-2xl font-bold text-green-600">You’ve already passed the test.</h2><p class="mt-4">Retest is not required. Contact admin if you think this is an error.</p></div>`;
+        return;
+      }
+
+      document.getElementById('quiz-title').textContent = project.title;
+      document.getElementById('question-count-info').textContent = Math.min(NUMBER_OF_QUESTIONS_TO_SELECT, project.questions.length);
+    }
+
+    function startQuiz() {
+      const name = document.getElementById('employee-name').value.trim();
+      const id = document.getElementById('employee-id').value.trim();
+
+      if (!name || !id) {
+        alert("Please enter both your name and ID to proceed.");
+        return;
+      }
+
+      localStorage.setItem("employeeName", name);
+      localStorage.setItem("employeeId", id);
+
+      buildQuiz();
+      startScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+
+      startTimer(300); // 5-minute timer
+    }
+
+    function buildQuiz() {
+      const project = projectQuizzes[PILOT_PROJECT_KEY];
+      const questionsWrapper = document.getElementById('questions-wrapper');
+      document.getElementById('quiz-header').textContent = project.title;
+      questionsWrapper.innerHTML = '';
+
+      const shuffled = [...project.questions].sort(() => 0.5 - Math.random());
+      selectedQuestions = shuffled.slice(0, NUMBER_OF_QUESTIONS_TO_SELECT);
+
+      selectedQuestions.forEach((q, index) => {
+        const questionDiv = document.createElement('div');
+        const questionTitle = document.createElement('h3');
+        questionTitle.className = 'text-lg font-semibold text-slate-700 mb-4';
+        questionTitle.textContent = `${index + 1}. ${q.question}`;
+        questionDiv.appendChild(questionTitle);
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'space-y-3';
+
+        [...q.choices].sort(() => 0.5 - Math.random()).forEach((choice, choiceIndex) => {
+          const optionWrapper = document.createElement('div');
+          optionWrapper.className = 'quiz-option';
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `question-${index}`;
+          input.value = choice;
+          input.id = `q${index}-option${choiceIndex}`;
+          input.className = 'sr-only';
+
+          const label = document.createElement('label');
+          label.htmlFor = input.id;
+          label.textContent = choice;
+          label.className = 'block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer';
+
+          optionWrapper.appendChild(input);
+          optionWrapper.appendChild(label);
+          optionsDiv.appendChild(optionWrapper);
+        });
+
+        questionDiv.appendChild(optionsDiv);
+        questionsWrapper.appendChild(questionDiv);
+      });
+    }
+
+    function submitQuiz() {
+      let score = 0;
+      selectedQuestions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+        if (selected && selected.value === q.answer) score++;
+      });
+
+      const total = selectedQuestions.length;
+      const percent = (score / total) * 100;
+      document.getElementById('score-text').textContent = `${score} / ${total}`;
+      document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
+
+      const feedback = document.getElementById('feedback-text');
+      if (percent >= 80) {
+        feedback.textContent = "Excellent! You have a strong understanding of our processes.";
+        feedback.className = "text-green-600 font-medium";
+        document.getElementById('certificate-download').innerHTML = `<a href="certificate.html?name=${localStorage.getItem("employeeName")}&score=${score}" target="_blank" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700">Download Certificate</a>`;
+      } else if (percent >= 60) {
+        feedback.textContent = "Good job! There are a few areas for review.";
+        feedback.className = "text-yellow-600 font-medium";
+      } else {
+        feedback.textContent = "It looks like a review of the processes is needed. Please reach out to your manager for clarification.";
+        feedback.className = "text-red-600 font-medium";
+      }
+
+      localStorage.setItem(`score_${PILOT_PROJECT_KEY}`, percent.toFixed(1));
+      quizScreen.classList.add('hidden');
+      resultScreen.classList.remove('hidden');
+    }
+
+    function restartQuiz() {
+      resultScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    }
+
+    function startTimer(seconds) {
+      const timerDisplay = document.getElementById("timer");
+      let remaining = seconds;
+
+      const interval = setInterval(() => {
+        const m = Math.floor(remaining / 60);
+        const s = String(remaining % 60).padStart(2, '0');
+        timerDisplay.textContent = `Time Left: ${m}:${s}`;
+        remaining--;
+
+        if (remaining < 0) {
+          clearInterval(interval);
+          alert("Time's up! Submitting your test.");
+          submitQuiz();
         }
+      }, 1000);
+    }
 
-        /**
-         * Sets up and displays the start screen for the selected quiz.
-         */
-        function showStartScreen() {
-            const project = projectQuizzes[currentProjectKey];
-            document.getElementById('quiz-title').textContent = project.title;
-            document.getElementById('question-count-info').textContent = Math.min(NUMBER_OF_QUESTIONS_TO_SELECT, project.questions.length);
-            
-            startScreen.classList.remove('hidden');
-            quizScreen.classList.add('hidden');
-            resultScreen.classList.add('hidden');
-        }
-
-        /**
-         * Starts the quiz for the current project.
-         */
-        function startQuiz() {
-            buildQuiz();
-            startScreen.classList.add('hidden');
-            quizScreen.classList.remove('hidden');
-        }
-
-        /**
-         * Builds the quiz with questions from the current project's bank.
-         */
-        function buildQuiz() {
-            const project = projectQuizzes[currentProjectKey];
-            const questionBank = project.questions;
-            
-            document.getElementById('quiz-header').textContent = project.title;
-            const questionsWrapper = document.getElementById('questions-wrapper');
-            questionsWrapper.innerHTML = '';
-            
-            const shuffled = [...questionBank].sort(() => 0.5 - Math.random());
-            selectedQuestions = shuffled.slice(0, Math.min(NUMBER_OF_QUESTIONS_TO_SELECT, questionBank.length));
-
-            selectedQuestions.forEach((q, index) => {
-                const questionDiv = document.createElement('div');
-                const questionTitle = document.createElement('h3');
-                questionTitle.className = 'text-lg font-semibold text-slate-700 mb-4';
-                questionTitle.textContent = `${index + 1}. ${q.question}`;
-                questionDiv.appendChild(questionTitle);
-
-                const optionsDiv = document.createElement('div');
-                optionsDiv.className = 'space-y-3';
-                const shuffledChoices = [...q.choices].sort(() => 0.5 - Math.random());
-
-                shuffledChoices.forEach((choice, choiceIndex) => {
-                    const optionWrapper = document.createElement('div');
-                    optionWrapper.className = 'quiz-option';
-                    const input = document.createElement('input');
-                    input.type = 'radio';
-                    input.name = `question-${index}`;
-                    input.value = choice;
-                    input.id = `q${index}-option${choiceIndex}`;
-                    input.className = 'sr-only';
-                    const label = document.createElement('label');
-                    label.htmlFor = `q${index}-option${choiceIndex}`;
-                    label.textContent = choice;
-                    label.className = 'block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer transition-colors duration-200';
-                    optionWrapper.appendChild(input);
-                    optionWrapper.appendChild(label);
-                    optionsDiv.appendChild(optionWrapper);
-                });
-
-                questionDiv.appendChild(optionsDiv);
-                questionsWrapper.appendChild(questionDiv);
-            });
-        }
-
-        /**
-         * Submits the quiz and displays the result screen.
-         */
-        function submitQuiz() {
-            let score = 0;
-            selectedQuestions.forEach((q, index) => {
-                const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`);
-                if (selectedOption && selectedOption.value === q.answer) {
-                    score++;
-                }
-            });
-
-            document.getElementById('score-text').textContent = `${score} / ${selectedQuestions.length}`;
-            document.getElementById('result-quiz-title').textContent = projectQuizzes[currentProjectKey].title;
-            
-            const feedbackText = document.getElementById('feedback-text');
-            const percentage = (score / selectedQuestions.length) * 100;
-             if (percentage >= 80) {
-                feedbackText.textContent = "Excellent! You have a strong understanding of our processes.";
-                feedbackText.className = "text-green-600 font-medium";
-            } else if (percentage >= 60) {
-                feedbackText.textContent = "Good job! There are a few areas for review.";
-                feedbackText.className = "text-yellow-600 font-medium";
-            } else {
-                feedbackText.textContent = "It looks like a review of the processes is needed. Please reach out to your manager for clarification.";
-                feedbackText.className = "text-red-600 font-medium";
-            }
-
-            quizScreen.classList.add('hidden');
-            resultScreen.classList.remove('hidden');
-        }
-
-        /**
-         * Restarts the current quiz.
-         */
-        function restartQuiz() {
-            resultScreen.classList.add('hidden');
-            showStartScreen();
-        }
-        
-        // Run initialization on page load
-        initialize();
-    </script>
+    initialize();
+  </script>
 </body>
 </html>
