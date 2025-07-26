@@ -2,7 +2,7 @@
 
 const projectQuizzes = {
   "seva_vasati": {
-    title: "Seva Vasati Project Test",
+    title: "ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ ಕಾರ್ಯವಿಧಾನಗಳ ಅರಿವು ,ಅನುಷ್ಠಾನ ಪರೀಕ್ಷೆ  ಮತ್ತು ಪ್ರಮಾಣೀಕರಣ",
     questions: [
       {
         question: "What is the primary goal of the Seva Vasati project?",
