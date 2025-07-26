@@ -11,4 +11,6 @@ const projectQuizzes = {
             { question: "What is a critical supply for a new housing unit?", choices: ["Furniture", "Internet", "Basic utilities kit"], answer: "Basic utilities kit" },
             { question: "How are new volunteers onboarded?", choices: ["With a handbook", "Through a mentorship program", "Via an orientation session"], answer: "Via an orientation session" }
         ]
-    };
+    }
+};
+
