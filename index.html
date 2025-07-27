@@ -208,10 +208,13 @@
       const cert = document.getElementById('certificate-download');
       const retest = document.getElementById('retest-button');
 
+      cert.innerHTML = ''; // Clear previous state
+
       if (percent >= PASSING_PERCENTAGE) {
         feedback.textContent = "Excellent! You have a strong understanding of our processes.";
         feedback.className = "text-green-600 font-medium";
-        cert.innerHTML = `<a href="#" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate (Coming Soon)</a>`;
+        // UPDATED: This now creates the button that calls the new function
+        cert.innerHTML = `<button onclick="handleCertificateDownload()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</button>`;
         retest.classList.add("hidden");
       } else {
         feedback.textContent = "A review of the processes is recommended. Please try again.";
@@ -221,6 +224,32 @@
 
       quizScreen.classList.add('hidden');
       resultScreen.classList.remove('hidden');
+    }
+
+    // NEW: This function handles logging the download and opening the certificate
+    function handleCertificateDownload() {
+      const id = localStorage.getItem("employeeId");
+      const name = localStorage.getItem("employeeName");
+      const date = new Date().toLocaleDateString('en-GB'); // Format: DD/MM/YYYY
+
+      // 1. Log the download to the Google Sheet
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: 'log_download', id: id })
+      })
+      .then(res => res.json())
+      .then(data => {
+          if(data.status === 'success') {
+              console.log("Download logged successfully.");
+          } else {
+              console.error("Failed to log download:", data.message);
+          }
+      })
+      .catch(console.error);
+      
+      // 2. Open the certificate page for the user in a new tab
+      const certificateUrl = `certificate.html?name=${encodeURIComponent(name)}&date=${encodeURIComponent(date)}`;
+      window.open(certificateUrl, '_blank');
     }
 
     function restartQuiz() {
