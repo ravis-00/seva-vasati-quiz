@@ -77,10 +77,13 @@
   <script src="questions.js"></script>
 
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycxbUnVVL2Yilh5JSipOaili_u5X2AI-TcGR-mNwWjvkGDoTcZNmbr2_9YGMbSSHuxq/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycxbUnVVL2Yilh5JSipOaili_u5X2AI-TcGR-mNwWjvkGDoTcZNmbr2_9YGMbSSHuxq/exec"; // Your Web App URL
     const PILOT_PROJECT_KEY = "seva_vasati";
     const NUMBER_OF_QUESTIONS_TO_SELECT = 5;
+    const PASSING_PERCENTAGE = 80;
+    
     let selectedQuestions = [];
+    let quizTimer; // To hold the timer interval
 
     const startScreen = document.getElementById('start-screen');
     const quizScreen = document.getElementById('quiz-screen');
@@ -92,7 +95,6 @@
         document.body.innerHTML = `<div class="text-center p-8"><h2 class="text-2xl font-bold text-red-600">Configuration Error</h2><p>Ensure <strong>questions.js</strong> is correctly linked and has the project key "<strong>${PILOT_PROJECT_KEY}</strong>".</p></div>`;
         return;
       }
-
       document.getElementById('quiz-title').textContent = project.title;
       document.getElementById('question-count-info').textContent = Math.min(NUMBER_OF_QUESTIONS_TO_SELECT, project.questions.length);
     }
@@ -106,13 +108,14 @@
         return;
       }
 
-      const eligible = await checkEligibilityFromGoogleSheet(name, id);
+      const eligibility = await checkEligibilityFromGoogleSheet(id);
 
-      if (eligible?.score >= 80) {
+      if (eligibility?.score >= PASSING_PERCENTAGE) {
         document.body.innerHTML = `
-          <div class="text-center p-8">
-            <h2 class="text-2xl font-bold text-green-600">You’ve already passed the test.</h2>
-            <p class="mt-4">Retest is not required. Contact admin if you think this is an error.</p>
+          <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-auto">
+            <h2 class="text-2xl font-bold text-green-600">You’ve Already Passed!</h2>
+            <p class="mt-4 text-slate-600">You have already passed this test with a score of <strong>${eligibility.score}%</strong>. A retest is not required.</p>
+            <p class="mt-2 text-sm text-slate-500">Please contact an administrator if you believe this is an error.</p>
           </div>
         `;
         return;
@@ -124,22 +127,21 @@
       buildQuiz();
       startScreen.classList.add('hidden');
       quizScreen.classList.remove('hidden');
-
-      startTimer(300);
+      startTimer(15 * 60); // 15 minutes
     }
 
-    async function checkEligibilityFromGoogleSheet(name, id) {
+    async function checkEligibilityFromGoogleSheet(id) {
       try {
-        const response = await fetch(`${WEB_APP_URL}?name=${encodeURIComponent(name)}&id=${encodeURIComponent(id)}`);
+        const response = await fetch(`${WEB_APP_URL}?id=${encodeURIComponent(id)}`);
         const data = await response.json();
         if (data?.status === "found") {
           return { score: parseFloat(data.score) };
-        } else {
-          return { score: 0 };
         }
+        return { score: 0 };
       } catch (error) {
         console.error("Error checking eligibility:", error);
-        return { score: 0 };
+        alert("Could not check eligibility. Please check your connection or contact an admin.");
+        return null;
       }
     }
 
@@ -154,86 +156,97 @@
 
       selectedQuestions.forEach((q, index) => {
         const questionDiv = document.createElement('div');
-        const questionTitle = document.createElement('h3');
-        questionTitle.className = 'text-lg font-semibold text-slate-700 mb-4';
-        questionTitle.textContent = `${index + 1}. ${q.question}`;
-        questionDiv.appendChild(questionTitle);
-
-        const optionsDiv = document.createElement('div');
-        optionsDiv.className = 'space-y-3';
-
-        [...q.choices].sort(() => 0.5 - Math.random()).forEach((choice, choiceIndex) => {
+        questionDiv.innerHTML = `
+          <h3 class="text-lg font-semibold text-slate-700 mb-4">${index + 1}. ${q.question}</h3>
+          <div class="space-y-3" id="q${index}-options"></div>
+        `;
+        
+        const optionsDiv = questionDiv.querySelector(`#q${index}-options`);
+        const choices = [...q.choices].sort(() => 0.5 - Math.random());
+        
+        choices.forEach((choice, choiceIndex) => {
           const optionWrapper = document.createElement('div');
           optionWrapper.className = 'quiz-option';
-          const input = document.createElement('input');
-          input.type = 'radio';
-          input.name = `question-${index}`;
-          input.value = choice;
-          input.id = `q${index}-option${choiceIndex}`;
-          input.className = 'sr-only';
-
-          const label = document.createElement('label');
-          label.htmlFor = input.id;
-          label.textContent = choice;
-          label.className = 'block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer';
-
-          optionWrapper.appendChild(input);
-          optionWrapper.appendChild(label);
+          optionWrapper.innerHTML = `
+            <input type="radio" name="question-${index}" value="${choice}" id="q${index}-option${choiceIndex}" class="sr-only">
+            <label for="q${index}-option${choiceIndex}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer transition-colors">${choice}</label>
+          `;
           optionsDiv.appendChild(optionWrapper);
         });
-
-        questionDiv.appendChild(optionsDiv);
         questionsWrapper.appendChild(questionDiv);
       });
     }
 
     function submitQuiz() {
+      clearInterval(quizTimer); // Stop the timer
       let score = 0;
       selectedQuestions.forEach((q, index) => {
         const selected = document.querySelector(`input[name="question-${index}"]:checked`);
-        if (selected && selected.value === q.answer) score++;
+        if (selected && selected.value === q.answer) {
+          score++;
+        }
       });
 
       const total = selectedQuestions.length;
-      const percent = (score / total) * 100;
-      document.getElementById('score-text').textContent = `${score} / ${total}`;
-      document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
+      const percent = total > 0 ? (score / total) * 100 : 0;
 
-      const feedback = document.getElementById('feedback-text');
-      const certDownloadDiv = document.getElementById('certificate-download');
-      const retestButton = document.getElementById('retest-button');
+      // Save data to Google Sheet
+      saveResultsToSheet({
+        name: localStorage.getItem("employeeName"),
+        id: localStorage.getItem("employeeId"),
+        score: score,
+        total: total,
+        percentage: percent.toFixed(2)
+      });
+      
+      displayResults(score, total, percent);
+    }
 
-      if (percent >= 80) {
-        feedback.textContent = "Excellent! You have a strong understanding of our processes.";
-        feedback.className = "text-green-600 font-medium";
-        certDownloadDiv.innerHTML = `<a href="certificate.html?name=${localStorage.getItem("employeeName")}&score=${score}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`;
-        retestButton.style.display = "none";
+    function saveResultsToSheet(resultData) {
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        // DO NOT add a 'Content-Type' header. Omitting it prevents a CORS preflight
+        // request that Google Apps Script cannot handle, which is the core issue.
+        body: JSON.stringify(resultData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          console.log("Score saved successfully:", data.message);
+        } else {
+          console.error("Failed to save score:", data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Error while saving score:", error);
+        // Inform the user that saving failed but their result is still visible.
+        alert("Your score could not be saved to the sheet, but your result is displayed. Please screenshot this page and contact an administrator.");
+      });
+    }
 
-        // Save to Google Sheet
-        fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: localStorage.getItem("employeeName"),
-            id: localStorage.getItem("employeeId"),
-            score: score
-          })
-        });
+    function displayResults(score, total, percent) {
+        document.getElementById('score-text').textContent = `${score} / ${total}`;
+        document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
 
-      } else if (percent >= 60) {
-        feedback.textContent = "Good job! There are a few areas for review.";
-        feedback.className = "text-yellow-600 font-medium";
-        certDownloadDiv.innerHTML = "";
-        retestButton.style.display = "inline-block";
-      } else {
-        feedback.textContent = "It looks like a review of the processes is needed. Please reach out to your manager for clarification.";
-        feedback.className = "text-red-600 font-medium";
-        certDownloadDiv.innerHTML = "";
-        retestButton.style.display = "inline-block";
-      }
+        const feedback = document.getElementById('feedback-text');
+        const certDownloadDiv = document.getElementById('certificate-download');
+        const retestButton = document.getElementById('retest-button');
 
-      quizScreen.classList.add('hidden');
-      resultScreen.classList.remove('hidden');
+        certDownloadDiv.innerHTML = ""; // Clear previous state
+        retestButton.style.display = "none"; // Hide by default
+
+        if (percent >= PASSING_PERCENTAGE) {
+            feedback.textContent = "Excellent! You have a strong understanding of our processes.";
+            feedback.className = "text-green-600 font-medium";
+            certDownloadDiv.innerHTML = `<a href="#" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate (Coming Soon)</a>`;
+        } else {
+            feedback.textContent = "A review of the processes is recommended. Please try again.";
+            feedback.className = "text-red-600 font-medium";
+            retestButton.style.display = "inline-block";
+        }
+
+        quizScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
     }
 
     function restartQuiz() {
@@ -244,16 +257,15 @@
     function startTimer(seconds) {
       const timerDisplay = document.getElementById("timer");
       let remaining = seconds;
-
-      const interval = setInterval(() => {
+      
+      quizTimer = setInterval(() => {
         const m = Math.floor(remaining / 60);
         const s = String(remaining % 60).padStart(2, '0');
         timerDisplay.textContent = `Time Left: ${m}:${s}`;
-        remaining--;
-
-        if (remaining < 0) {
-          clearInterval(interval);
-          alert("Time's up! Submitting your test.");
+        
+        if (remaining-- < 0) {
+          clearInterval(quizTimer);
+          alert("Time's up! Submitting your answers now.");
           submitQuiz();
         }
       }, 1000);
@@ -261,5 +273,3 @@
 
     initialize();
   </script>
-</body>
-</html>
