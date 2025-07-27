@@ -77,6 +77,7 @@
   <script src="questions.js"></script>
 
   <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycxbUnVVL2Yilh5JSipOaili_u5X2AI-TcGR-mNwWjvkGDoTcZNmbr2_9YGMbSSHuxq/exec";
     const PILOT_PROJECT_KEY = "seva_vasati";
     const NUMBER_OF_QUESTIONS_TO_SELECT = 5;
     let selectedQuestions = [];
@@ -129,7 +130,7 @@
 
     async function checkEligibilityFromGoogleSheet(name, id) {
       try {
-        const response = await fetch(`https://script.google.com/macros/s/AKfycxbUnVVL2Yilh5JSipOaili_u5X2AI-TcGR-mNwWjvkGDoTcZNmbr2_9YGMbSSHuxq/exec?name=${encodeURIComponent(name)}&id=${encodeURIComponent(id)}`);
+        const response = await fetch(`${WEB_APP_URL}?name=${encodeURIComponent(name)}&id=${encodeURIComponent(id)}`);
         const data = await response.json();
         if (data?.status === "found") {
           return { score: parseFloat(data.score) };
@@ -207,6 +208,18 @@
         feedback.className = "text-green-600 font-medium";
         certDownloadDiv.innerHTML = `<a href="certificate.html?name=${localStorage.getItem("employeeName")}&score=${score}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`;
         retestButton.style.display = "none";
+
+        // Save to Google Sheet
+        fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: localStorage.getItem("employeeName"),
+            id: localStorage.getItem("employeeId"),
+            score: score
+          })
+        });
+
       } else if (percent >= 60) {
         feedback.textContent = "Good job! There are a few areas for review.";
         feedback.className = "text-yellow-600 font-medium";
@@ -219,7 +232,6 @@
         retestButton.style.display = "inline-block";
       }
 
-      localStorage.setItem(`score_${PILOT_PROJECT_KEY}`, percent.toFixed(1));
       quizScreen.classList.add('hidden');
       resultScreen.classList.remove('hidden');
     }
