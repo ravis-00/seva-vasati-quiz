@@ -33,10 +33,10 @@
       <h1 id="quiz-title" class="text-3xl font-bold text-slate-800 mb-4"></h1>
       <p class="text-slate-600 mb-2">ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ:</p>
       <div class="mb-6 space-y-4 text-left">
-       <input type="text" id="employee-name" placeholder="ಸಿಬ್ಬಂದಿ ಹೆಸರು" class="w-full p-3 border rounded" />
+        <input type="text" id="employee-name" placeholder="ಸಿಬ್ಬಂದಿ ಹೆಸರು" class="w-full p-3 border rounded" />
         <input type="text" id="employee-id" placeholder="ಸಿಬ್ಬಂದಿ ಸಂಖ್ಯೆ" class="w-full p-3 border rounded" />
       </div>
-      <p class="text-slate-600 mb-4">ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಆಯ್ದ ಎಲ್ಲ <span id="question-count-info"></span> ಪ್ರಶ್ನೆಗಳಿಗೆ  15 ನಿಮಿಷ ಅವಧಿಯಲ್ಲಿ ಉತ್ತರಿಸಬೇಕು.</p>
+      <p class="text-slate-600 mb-4">ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಆಯ್ದ ಎಲ್ಲ <span id="question-count-info"></span> ಪ್ರಶ್ನೆಗಳಿಗೆ 15 ನಿಮಿಷ ಅವಧಿಯಲ್ಲಿ ಉತ್ತರಿಸಬೇಕು.</p>
       <button onclick="startQuiz()" class="bg-orange-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-orange-700 transition-colors duration-300 shadow-md">
         Start Test
       </button>
@@ -67,7 +67,7 @@
         <p id="score-text" class="text-5xl font-bold text-sky-600 mb-4">0 / 0</p>
         <div id="feedback-text" class="text-slate-600 mb-4"></div>
         <div id="certificate-download" class="mt-6"></div>
-        <button onclick="restartQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
+        <button id="retest-button" onclick="restartQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
           Take This Test Again
         </button>
       </div>
@@ -119,7 +119,7 @@
       startScreen.classList.add('hidden');
       quizScreen.classList.remove('hidden');
 
-      startTimer(300); // 5-minute timer
+      startTimer(300);
     }
 
     function buildQuiz() {
@@ -179,16 +179,24 @@
       document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
 
       const feedback = document.getElementById('feedback-text');
+      const certDownloadDiv = document.getElementById('certificate-download');
+      const retestButton = document.getElementById('retest-button');
+
       if (percent >= 80) {
         feedback.textContent = "Excellent! You have a strong understanding of our processes.";
         feedback.className = "text-green-600 font-medium";
-        document.getElementById('certificate-download').innerHTML = `<a href="certificate.html?name=${localStorage.getItem("employeeName")}&score=${score}" target="_blank" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700">Download Certificate</a>`;
+        certDownloadDiv.innerHTML = `<a href="certificate.html?name=${localStorage.getItem("employeeName")}&score=${score}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`;
+        retestButton.style.display = "none";
       } else if (percent >= 60) {
         feedback.textContent = "Good job! There are a few areas for review.";
         feedback.className = "text-yellow-600 font-medium";
+        certDownloadDiv.innerHTML = "";
+        retestButton.style.display = "inline-block";
       } else {
         feedback.textContent = "It looks like a review of the processes is needed. Please reach out to your manager for clarification.";
         feedback.className = "text-red-600 font-medium";
+        certDownloadDiv.innerHTML = "";
+        retestButton.style.display = "inline-block";
       }
 
       localStorage.setItem(`score_${PILOT_PROJECT_KEY}`, percent.toFixed(1));
