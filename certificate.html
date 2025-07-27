@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Achievement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* A4 paper size simulation */
+        body {
+            background-color: #f3f4f6; /* Light gray background to see the paper */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .paper {
+            width: 210mm;
+            height: 297mm;
+            max-width: 100%;
+            max-height: 100vh; /* Ensure it fits on screen */
+            box-shadow: 0 0 1rem rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        .certificate-container {
+            border: 10px solid #f97316; /* Orange-500 border */
+            padding: 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .name {
+            font-family: 'Tinos', serif;
+        }
+        /* Style for the print button */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        /* Hide button and other UI elements when printing */
+        @media print {
+            body { 
+                background-color: white; 
+                padding: 0;
+            }
+            .paper {
+                box-shadow: none;
+                width: 100%;
+                height: 100%;
+            }
+            .print-button {
+                display: none;
+            }
+            /* Ensure colors and backgrounds print correctly */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    </style>
+</head>
+<body>
+    <div class="paper">
+        <div class="certificate-container">
+            <!-- Header -->
+            <div class="text-center">
+                <img src="https://raw.githubusercontent.com/ravis-00/seva-vasati-quiz/main/Logo.png" alt="Logo" class="h-20 mx-auto mb-4" onerror="this.style.display='none'"/>
+                <h1 class="text-2xl font-bold tracking-wider text-gray-800">ರಾಷ್ಟ್ರೋತ್ಥಾನ ಪರಿಷತ್</h1>
+                <p class="text-xl font-semibold text-gray-600 mt-1">ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ</p>
+            </div>
+
+            <!-- Main Content -->
+            <div class="text-center">
+                <p class="text-lg text-gray-600">Certificate of Achievement</p>
+                <p class="text-3xl font-bold text-orange-600 mt-1">ಪ್ರಮಾಣ ಪತ್ರ</p>
+                <p class="mt-8 text-gray-500">This certificate is proudly presented to</p>
+                <p id="employee-name" class="name text-6xl font-bold text-gray-800 my-4">Employee Name</p>
+                <p class="text-gray-500">for successfully completing the assessment for the</p>
+                <p class="text-xl font-semibold text-gray-700 mt-2">"ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ ಕಾರ್ಯವಿಧಾನಗಳ ಅರಿವು ಮತ್ತು ಅನುಷ್ಠಾನ"</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-between items-end text-sm">
+                <div>
+                    <p class="font-semibold">Date of Completion:</p>
+                    <p id="completion-date">DD/MM/YYYY</p>
+                </div>
+                <div class="text-center">
+                    <p class="border-t-2 border-gray-400 pt-2 px-12 font-semibold">ಗುಣಮಟ್ಟ ಮತ್ತು ವ್ಯವಸ್ಥೆ ಪ್ರಕಲ್ಪ</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- This button will be hidden when printing -->
+    <button onclick="window.print()" class="print-button bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-blue-700">
+        Print / Save as PDF
+    </button>
+
+    <script>
+        // This script runs when the certificate page loads
+        window.onload = function() {
+            // Get the URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            // Use sample data if no parameters are provided in this preview
+            const name = urlParams.get('name') || "Ravindra";
+            const date = urlParams.get('date') || new Date().toLocaleDateString('en-GB');
+
+            // Put the data onto the certificate
+            if (name) {
+                document.getElementById('employee-name').textContent = name;
+            }
+            if (date) {
+                document.getElementById('completion-date').textContent = date;
+            }
+        };
+    </script>
+</body>
+</html>
