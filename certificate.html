@@ -29,8 +29,7 @@
             padding: 40px;
             height: 100%;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            flex-direction: column; /* Lays out children vertically */
             box-sizing: border-box;
         }
         .name {
@@ -74,7 +73,7 @@
             </div>
 
             <!-- Main Content -->
-            <div class="text-center">
+            <div class="text-center mt-12">
                 <p class="text-lg text-gray-600">Certificate of Achievement</p>
                 <p class="text-3xl font-bold text-orange-600 mt-1">ಪ್ರಮಾಣ ಪತ್ರ</p>
                 <p class="mt-8 text-gray-500">This certificate is proudly presented to</p>
@@ -82,6 +81,9 @@
                 <p class="text-gray-500">for successfully completing the assessment for the</p>
                 <p class="text-xl font-semibold text-gray-700 mt-2">"ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ ಕಾರ್ಯವಿಧಾನಗಳ ಅರಿವು ಮತ್ತು ಅನುಷ್ಠಾನ"</p>
             </div>
+
+            <!-- Spacer: This div will grow to push the footer to the bottom -->
+            <div class="flex-grow"></div>
 
             <!-- Footer -->
             <div class="flex justify-between items-end text-sm">
@@ -107,7 +109,7 @@
             // Get the URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             // Use sample data if no parameters are provided in this preview
-            const name = urlParams.get('name') || "Ravindra";
+            const name = urlParams.get('name') || "Ramesh";
             const date = urlParams.get('date') || new Date().toLocaleDateString('en-GB');
 
             // Put the data onto the certificate
