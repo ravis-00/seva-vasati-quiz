@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="kn">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>"ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ ಕಾರ್ಯವಿಧಾನಗಳ ಅರಿವು ಮತ್ತು ಅನುಷ್ಠಾನದ  ಪರೀಕ್ಷೆ  ಹಾಗೂ  ಪ್ರಮಾಣೀಕರಣ"</title>
+  <title>ಸೇವಾ ವಸತಿ ಪರೀಕ್ಷೆ ಹಾಗೂ ಪ್ರಮಾಣೀಕರಣ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -20,9 +20,7 @@
   </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
-
   <div id="quiz-container" class="w-full max-w-3xl mx-auto">
-
     <!-- Logo -->
     <div class="text-center mb-4">
       <img src="Logo.png" alt="Seva Vasati Logo" class="h-20 mx-auto" />
@@ -67,7 +65,7 @@
         <p id="score-text" class="text-5xl font-bold text-sky-600 mb-4">0 / 0</p>
         <div id="feedback-text" class="text-slate-600 mb-4"></div>
         <div id="certificate-download" class="mt-6"></div>
-        <button id="retest-button" onclick="restartQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md">
+        <button id="retest-button" onclick="restartQuiz()" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-sky-700 transition-colors duration-300 shadow-md hidden">
           Take This Test Again
         </button>
       </div>
@@ -75,15 +73,14 @@
   </div>
 
   <script src="questions.js"></script>
-
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzXbUnVVL2Yilh5JSipOaIil_u5X2Al-TcGR-mNwWjvkGDoTcZNmbr2_9YGMbSSHUxq/exec"; // Your Web App URL
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzXbUnVVL2Yilh5JSipOaIil_u5X2Al-TcGR-mNwWjvkGDoTcZNmbr2_9YGMbSSHUxq/exec";
     const PILOT_PROJECT_KEY = "seva_vasati";
     const NUMBER_OF_QUESTIONS_TO_SELECT = 5;
     const PASSING_PERCENTAGE = 80;
-    
+
     let selectedQuestions = [];
-    let quizTimer; // To hold the timer interval
+    let quizTimer;
 
     const startScreen = document.getElementById('start-screen');
     const quizScreen = document.getElementById('quiz-screen');
@@ -92,7 +89,7 @@
     function initialize() {
       const project = projectQuizzes?.[PILOT_PROJECT_KEY];
       if (!project) {
-        document.body.innerHTML = `<div class="text-center p-8"><h2 class="text-2xl font-bold text-red-600">Configuration Error</h2><p>Ensure <strong>questions.js</strong> is correctly linked and has the project key "<strong>${PILOT_PROJECT_KEY}</strong>".</p></div>`;
+        document.body.innerHTML = `<div class="text-center p-8"><h2 class="text-2xl font-bold text-red-600">Configuration Error</h2><p>Ensure <strong>questions.js</strong> has key "<strong>${PILOT_PROJECT_KEY}</strong>".</p></div>`;
         return;
       }
       document.getElementById('quiz-title').textContent = project.title;
@@ -104,18 +101,17 @@
       const id = document.getElementById('employee-id').value.trim();
 
       if (!name || !id) {
-        alert("Please enter both your name and ID to proceed.");
+        alert("ದಯವಿಟ್ಟು ಹೆಸರು ಮತ್ತು ಸಂಖ್ಯೆ ನಮೂದಿಸಿ.");
         return;
       }
 
       const eligibility = await checkEligibilityFromGoogleSheet(id);
-
       if (eligibility?.score >= PASSING_PERCENTAGE) {
         document.body.innerHTML = `
           <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-auto">
             <h2 class="text-2xl font-bold text-green-600">You’ve Already Passed!</h2>
-            <p class="mt-4 text-slate-600">You have already passed this test with a score of <strong>${eligibility.score}%</strong>. A retest is not required.</p>
-            <p class="mt-2 text-sm text-slate-500">Please contact an administrator if you believe this is an error.</p>
+            <p class="mt-4 text-slate-600">You already passed with <strong>${eligibility.score}%</strong>. Retest not required.</p>
+            <p class="mt-2 text-sm text-slate-500">Contact admin if you believe this is a mistake.</p>
           </div>
         `;
         return;
@@ -127,19 +123,16 @@
       buildQuiz();
       startScreen.classList.add('hidden');
       quizScreen.classList.remove('hidden');
-      startTimer(15 * 60); // 15 minutes
+      startTimer(15 * 60);
     }
 
     async function checkEligibilityFromGoogleSheet(id) {
       try {
         const response = await fetch(`${WEB_APP_URL}?id=${encodeURIComponent(id)}`);
         const data = await response.json();
-        if (data?.status === "found") {
-          return { score: parseFloat(data.score) };
-        }
+        if (data?.status === "found") return { score: parseFloat(data.score) };
         return { score: 0 };
       } catch (error) {
-        console.error("Error checking eligibility:", error);
         alert("Could not check eligibility. Please check your connection or contact an admin.");
         return null;
       }
@@ -151,102 +144,83 @@
       document.getElementById('quiz-header').textContent = project.title;
       questionsWrapper.innerHTML = '';
 
-      const shuffled = [...project.questions].sort(() => 0.5 - Math.random());
-      selectedQuestions = shuffled.slice(0, NUMBER_OF_QUESTIONS_TO_SELECT);
+      selectedQuestions = [...project.questions].sort(() => 0.5 - Math.random()).slice(0, NUMBER_OF_QUESTIONS_TO_SELECT);
 
       selectedQuestions.forEach((q, index) => {
-        const questionDiv = document.createElement('div');
-        questionDiv.innerHTML = `
+        const div = document.createElement('div');
+        div.innerHTML = `
           <h3 class="text-lg font-semibold text-slate-700 mb-4">${index + 1}. ${q.question}</h3>
           <div class="space-y-3" id="q${index}-options"></div>
         `;
-        
-        const optionsDiv = questionDiv.querySelector(`#q${index}-options`);
-        const choices = [...q.choices].sort(() => 0.5 - Math.random());
-        
-        choices.forEach((choice, choiceIndex) => {
-          const optionWrapper = document.createElement('div');
-          optionWrapper.className = 'quiz-option';
-          optionWrapper.innerHTML = `
-            <input type="radio" name="question-${index}" value="${choice}" id="q${index}-option${choiceIndex}" class="sr-only">
-            <label for="q${index}-option${choiceIndex}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer transition-colors">${choice}</label>
+        const optionsDiv = div.querySelector(`#q${index}-options`);
+        [...q.choices].sort(() => 0.5 - Math.random()).forEach((choice, i) => {
+          optionsDiv.innerHTML += `
+            <div class="quiz-option">
+              <input type="radio" name="question-${index}" value="${choice}" id="q${index}-option${i}" class="sr-only">
+              <label for="q${index}-option${i}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer transition-colors">${choice}</label>
+            </div>
           `;
-          optionsDiv.appendChild(optionWrapper);
         });
-        questionsWrapper.appendChild(questionDiv);
+        questionsWrapper.appendChild(div);
       });
     }
 
     function submitQuiz() {
-      clearInterval(quizTimer); // Stop the timer
+      clearInterval(quizTimer);
       let score = 0;
       selectedQuestions.forEach((q, index) => {
         const selected = document.querySelector(`input[name="question-${index}"]:checked`);
-        if (selected && selected.value === q.answer) {
-          score++;
-        }
+        if (selected?.value === q.answer) score++;
       });
 
       const total = selectedQuestions.length;
-      const percent = total > 0 ? (score / total) * 100 : 0;
+      const percentage = total ? (score / total) * 100 : 0;
 
-      // Save data to Google Sheet
       saveResultsToSheet({
         name: localStorage.getItem("employeeName"),
         id: localStorage.getItem("employeeId"),
         score: score,
         total: total,
-        percentage: percent.toFixed(2)
+        percentage: percentage.toFixed(2)
       });
-      
-      displayResults(score, total, percent);
+
+      displayResults(score, total, percentage);
     }
 
-    function saveResultsToSheet(resultData) {
+    function saveResultsToSheet(result) {
       fetch(WEB_APP_URL, {
         method: "POST",
-        // DO NOT add a 'Content-Type' header. Omitting it prevents a CORS preflight
-        // request that Google Apps Script cannot handle, which is the core issue.
-        body: JSON.stringify(resultData)
+        body: JSON.stringify(result)
       })
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
-        if(data.status === 'success') {
-          console.log("Score saved successfully:", data.message);
-        } else {
-          console.error("Failed to save score:", data.message);
-        }
+        if (data.status !== 'success') console.warn("Failed to save:", data.message);
       })
-      .catch(error => {
-        console.error("Error while saving score:", error);
-        // Inform the user that saving failed but their result is still visible.
-        alert("Your score could not be saved to the sheet, but your result is displayed. Please screenshot this page and contact an administrator.");
+      .catch(err => {
+        alert("Your score could not be saved to the sheet. Please screenshot this page.");
       });
     }
 
     function displayResults(score, total, percent) {
-        document.getElementById('score-text').textContent = `${score} / ${total}`;
-        document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
+      document.getElementById('score-text').textContent = `${score} / ${total}`;
+      document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
+      const feedback = document.getElementById('feedback-text');
+      const cert = document.getElementById('certificate-download');
+      const retest = document.getElementById('retest-button');
 
-        const feedback = document.getElementById('feedback-text');
-        const certDownloadDiv = document.getElementById('certificate-download');
-        const retestButton = document.getElementById('retest-button');
+      if (percent >= PASSING_PERCENTAGE) {
+        feedback.textContent = "Excellent! You have a strong understanding of our processes.";
+        feedback.className = "text-green-600 font-medium";
+        cert.innerHTML = `<a href="#" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate (Coming Soon)</a>`;
+        retest.classList.add("hidden");
+      } else {
+        feedback.textContent = "A review of the processes is recommended. Please try again.";
+        feedback.className = "text-red-600 font-medium";
+        retest.classList.remove("hidden");
+      }
 
-        certDownloadDiv.innerHTML = ""; // Clear previous state
-        retestButton.style.display = "none"; // Hide by default
-
-        if (percent >= PASSING_PERCENTAGE) {
-            feedback.textContent = "Excellent! You have a strong understanding of our processes.";
-            feedback.className = "text-green-600 font-medium";
-            certDownloadDiv.innerHTML = `<a href="#" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate (Coming Soon)</a>`;
-        } else {
-            feedback.textContent = "A review of the processes is recommended. Please try again.";
-            feedback.className = "text-red-600 font-medium";
-            retestButton.style.display = "inline-block";
-        }
-
-        quizScreen.classList.add('hidden');
-        resultScreen.classList.remove('hidden');
+      quizScreen.classList.add('hidden');
+      resultScreen.classList.remove('hidden');
     }
 
     function restartQuiz() {
@@ -257,12 +231,11 @@
     function startTimer(seconds) {
       const timerDisplay = document.getElementById("timer");
       let remaining = seconds;
-      
+
       quizTimer = setInterval(() => {
         const m = Math.floor(remaining / 60);
         const s = String(remaining % 60).padStart(2, '0');
         timerDisplay.textContent = `Time Left: ${m}:${s}`;
-        
         if (remaining-- < 0) {
           clearInterval(quizTimer);
           alert("Time's up! Submitting your answers now.");
@@ -273,3 +246,5 @@
 
     initialize();
   </script>
+</body>
+</html>
