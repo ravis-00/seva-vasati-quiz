@@ -7,34 +7,40 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        /* A4 paper size simulation */
         body {
             background-color: #f3f4f6; /* Light gray background to see the paper */
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 2rem;
+            padding: 1rem; /* Padding for small screens */
+            font-family: 'Inter', sans-serif;
         }
+
+        /* Responsive paper container for screen view */
         .paper {
-            width: 210mm;
-            height: 297mm;
-            max-width: 100%;
-            max-height: 100vh; /* Ensure it fits on screen */
-            box-shadow: 0 0 1rem rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px; /* Max width for desktop view */
             background-color: white;
+            box-shadow: 0 0 1rem rgba(0,0,0,0.1);
+            /* A4 Aspect Ratio: 210 / 297 */
+            aspect-ratio: 210 / 297; 
+            display: flex;
         }
+
         .certificate-container {
             border: 10px solid #f97316; /* Orange-500 border */
-            padding: 40px;
+            width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column; /* Lays out children vertically */
             box-sizing: border-box;
         }
+
         .name {
             font-family: 'Tinos', serif;
         }
+        
         /* Style for the print button */
         .print-button {
             position: fixed;
@@ -42,16 +48,23 @@
             right: 20px;
             z-index: 100;
         }
-        /* Hide button and other UI elements when printing */
+
+        /* --- PRINT STYLES --- */
+        /* These styles apply ONLY when the user prints the page */
         @media print {
-            body { 
-                background-color: white; 
+            body {
+                background-color: white;
                 padding: 0;
+                margin: 0;
             }
             .paper {
+                width: 210mm;
+                height: 297mm;
                 box-shadow: none;
-                width: 100%;
-                height: 100%;
+                margin: 0;
+                padding: 0;
+                max-width: none;
+                aspect-ratio: auto;
             }
             .print-button {
                 display: none;
@@ -64,29 +77,35 @@
 </head>
 <body>
     <div class="paper">
-        <div class="certificate-container">
+        <!-- Added responsive padding using Tailwind classes -->
+        <div class="certificate-container p-4 sm:p-8 md:p-10">
             <!-- Header -->
             <div class="text-center">
-                <img src="https://raw.githubusercontent.com/ravis-00/seva-vasati-quiz/main/Logo.png" alt="Logo" class="h-20 mx-auto mb-4" onerror="this.style.display='none'"/>
-                <h1 class="text-2xl font-bold tracking-wider text-gray-800">ರಾಷ್ಟ್ರೋತ್ಥಾನ ಪರಿಷತ್</h1>
-                <p class="text-xl font-semibold text-gray-600 mt-1">ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ</p>
+                <!-- Added responsive height to logo -->
+                <img src="https://raw.githubusercontent.com/ravis-00/seva-vasati-quiz/main/Logo.png" alt="Logo" class="h-12 sm:h-16 md:h-20 mx-auto mb-2 sm:mb-4" onerror="this.style.display='none'"/>
+                <!-- Added responsive text sizes -->
+                <h1 class="text-lg sm:text-xl md:text-2xl font-bold tracking-wider text-gray-800">ರಾಷ್ಟ್ರೋತ್ಥಾನ ಪರಿಷತ್</h1>
+                <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-600 mt-1">ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ</p>
             </div>
 
             <!-- Main Content -->
-            <div class="text-center mt-12">
-                <p class="text-lg text-gray-600">Certificate of Achievement</p>
-                <p class="text-3xl font-bold text-orange-600 mt-1">ಪ್ರಮಾಣ ಪತ್ರ</p>
-                <p class="mt-8 text-gray-500">This certificate is proudly presented to</p>
-                <p id="employee-name" class="name text-6xl font-bold text-gray-800 my-4">Employee Name</p>
-                <p class="text-gray-500">for successfully completing the assessment for the</p>
-                <p class="text-xl font-semibold text-gray-700 mt-2">"ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ ಕಾರ್ಯವಿಧಾನಗಳ ಅರಿವು ಮತ್ತು ಅನುಷ್ಠಾನ"</p>
+            <!-- Added responsive margins -->
+            <div class="text-center mt-4 sm:mt-8 md:mt-12">
+                <!-- Added responsive text sizes -->
+                <p class="text-sm sm:text-base md:text-lg text-gray-600">Certificate of Achievement</p>
+                <p class="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mt-1">ಪ್ರಮಾಣ ಪತ್ರ</p>
+                <p class="mt-4 sm:mt-8 text-xs sm:text-sm md:text-base text-gray-500">This certificate is proudly presented to</p>
+                <p id="employee-name" class="name text-3xl sm:text-5xl md:text-6xl font-bold text-gray-800 my-2 sm:my-4">Employee Name</p>
+                <p class="text-xs sm:text-sm md:text-base text-gray-500">for successfully completing the assessment for the</p>
+                <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700 mt-2">"ಸೇವಾ ವಸತಿ ಪ್ರಕಲ್ಪ ಕಾರ್ಯವಿಧಾನಗಳ ಅರಿವು ಮತ್ತು ಅನುಷ್ಠಾನ"</p>
             </div>
 
             <!-- Spacer: This div will grow to push the footer to the bottom -->
             <div class="flex-grow"></div>
 
             <!-- Footer -->
-            <div class="flex justify-between items-end text-sm">
+            <!-- Added responsive text sizes -->
+            <div class="flex justify-between items-end text-xs sm:text-sm">
                 <div>
                     <p class="font-semibold">Date of Completion:</p>
                     <p id="completion-date">DD/MM/YYYY</p>
@@ -108,8 +127,8 @@
         window.onload = function() {
             // Get the URL parameters
             const urlParams = new URLSearchParams(window.location.search);
-            // Use sample data if no parameters are provided in this preview
-            const name = urlParams.get('name') || "Ramesh";
+            // Use sample data if no parameters are provided
+            const name = urlParams.get('name') || "Ravindra Srinivasa Murthy";
             const date = urlParams.get('date') || new Date().toLocaleDateString('en-GB');
 
             // Put the data onto the certificate
