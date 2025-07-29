@@ -20,15 +20,11 @@
   </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
-
   <div id="quiz-container" class="w-full max-w-3xl mx-auto">
-
-    <!-- Logo -->
     <div class="text-center mb-4">
       <img src="Logo.png" alt="Seva Vasati Logo" class="h-20 mx-auto" onerror="this.src='https://placehold.co/200x80/ffffff/333333?text=Logo'"/>
     </div>
 
-    <!-- Start Screen -->
     <div id="start-screen" class="bg-white p-8 rounded-xl shadow-lg text-center">
       <h1 id="quiz-title" class="text-3xl font-bold text-slate-800 mb-4"></h1>
       <p class="text-slate-600 mb-2">ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ:</p>
@@ -42,7 +38,6 @@
       </button>
     </div>
 
-    <!-- Quiz Screen -->
     <div id="quiz-screen" class="hidden">
       <div class="bg-white p-8 rounded-xl shadow-lg">
         <div class="flex justify-between items-center mb-4">
@@ -58,7 +53,6 @@
       </div>
     </div>
 
-    <!-- Result Screen -->
     <div id="result-screen" class="hidden">
       <div class="bg-white p-8 rounded-xl shadow-lg text-center">
         <h2 class="text-3xl font-bold text-slate-800 mb-4">Test Complete!</h2>
@@ -75,15 +69,14 @@
   </div>
 
   <script src="questions.js"></script>
-
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0chN71nUhDb0lXrYRI49ZLCANuPUPwe-SU_X2HSU9n6HyQurU_uBJHPpC5nuPAB21/exec"; // Your Web App URL
+    const WEB_APP_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
     const PILOT_PROJECT_KEY = "seva_vasati";
     const NUMBER_OF_QUESTIONS_TO_SELECT = 25;
     const PASSING_PERCENTAGE = 80;
-    
+
     let selectedQuestions = [];
-    let quizTimer; // To hold the timer interval
+    let quizTimer;
 
     const startScreen = document.getElementById('start-screen');
     const quizScreen = document.getElementById('quiz-screen');
@@ -99,6 +92,24 @@
       document.getElementById('question-count-info').textContent = NUMBER_OF_QUESTIONS_TO_SELECT;
     }
 
+    async function checkEligibilityFromGoogleSheet(id) {
+      try {
+        const response = await fetch(`${WEB_APP_URL}?id=${encodeURIComponent(id)}`);
+        const data = await response.json();
+        if (data?.status === "passed") {
+          return {
+            score: parseFloat(data.score),
+            certificateDownloaded: data.certificateDownloaded
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error("Error checking eligibility:", error);
+        alert("Could not check eligibility. Please try again or contact admin.");
+        return null;
+      }
+    }
+
     async function startQuiz() {
       const name = document.getElementById('employee-name').value.trim();
       const id = document.getElementById('employee-id').value.trim();
@@ -108,22 +119,28 @@
         return;
       }
 
-      // Show a temporary loading message
       const startButton = document.querySelector('#start-screen button');
       startButton.disabled = true;
       startButton.textContent = 'Checking...';
 
       const eligibility = await checkEligibilityFromGoogleSheet(id);
-      
+
       startButton.disabled = false;
       startButton.textContent = 'Start Test';
 
-      // **FIX 2: Correctly block users who have already passed**
       if (eligibility && eligibility.score >= PASSING_PERCENTAGE) {
+        const encodedName = encodeURIComponent(name);
+        const today = new Date().toLocaleDateString('en-GB');
+
         document.body.innerHTML = `
           <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-auto">
             <h2 class="text-2xl font-bold text-green-600">You Have Already Passed!</h2>
             <p class="mt-4 text-slate-600">ನೀವು ಈಗಾಗಲೇ ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ <strong>${eligibility.score}%</strong> ಅಂಕಗಳೊಂದಿಗೆ ಉತ್ತೀರ್ಣರಾಗಿದ್ದೀರಿ. ಮರುಪರೀಕ್ಷೆಯ ಅಗತ್ಯವಿಲ್ಲ.</p>
+            ${
+              !eligibility.certificateDownloaded
+                ? `<a href="certificate.html?name=${encodedName}&date=${today}" target="_blank" onclick="logCertificateDownload('${id}')" class="mt-4 inline-block bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`
+                : `<p class="mt-4 text-green-700 font-medium">Certificate already downloaded.</p>`
+            }
             <p class="mt-2 text-sm text-slate-500">ಇದು ತಪ್ಪಾಗಿದ್ದರೆ ದಯವಿಟ್ಟು ನಿರ್ವಾಹಕರನ್ನು ಸಂಪರ್ಕಿಸಿ.</p>
           </div>
         `;
@@ -132,155 +149,94 @@
 
       localStorage.setItem("employeeName", name);
       localStorage.setItem("employeeId", id);
-
       buildQuiz();
       startScreen.classList.add('hidden');
       quizScreen.classList.remove('hidden');
-      startTimer(15 * 60); // 15 minutes
+      startTimer(15 * 60);
     }
 
-    async function checkEligibilityFromGoogleSheet(id) {
-      try {
-        const response = await fetch(`${WEB_APP_URL}?id=${encodeURIComponent(id)}`);
-        if (!response.ok) {
-            // This will catch HTTP errors like 404 or 500
-            throw new Error(`Network response was not ok: ${response.statusText}`);
-        }
-        const data = await response.json();
-        if (data?.status === "found") {
-          return { score: parseFloat(data.score) };
-        }
-        return null; // Return null if not found
-      } catch (error) {
-        console.error("Error checking eligibility:", error);
-        alert("Could not check eligibility. Please check your connection or contact an admin.");
-        return null; // Ensure it returns null on error
-      }
+    function logCertificateDownload(id) {
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "log_download", id })
+      }).then(res => res.json())
+        .then(data => console.log("Certificate logged:", data))
+        .catch(err => console.error("Logging error:", err));
     }
-    
+
     function shuffleArray(array) {
-        return [...array].sort(() => 0.5 - Math.random());
+      return [...array].sort(() => 0.5 - Math.random());
     }
 
     function buildQuiz() {
-        const project = projectQuizzes[PILOT_PROJECT_KEY];
-        const allQuestions = project.questions;
-        const questionsWrapper = document.getElementById('questions-wrapper');
-        document.getElementById('quiz-header').textContent = project.title;
-        questionsWrapper.innerHTML = '';
-        
-        const shuffledGeneral = shuffleArray(allQuestions.general);
-        const generalSelection = shuffledGeneral.slice(0, 10);
+      const project = projectQuizzes[PILOT_PROJECT_KEY];
+      const allQuestions = project.questions;
+      const questionsWrapper = document.getElementById('questions-wrapper');
+      document.getElementById('quiz-header').textContent = project.title;
+      questionsWrapper.innerHTML = '';
 
-        const specificSopQuestions = [
-            ...allQuestions.tailoring,
-            ...allQuestions.shg,
-            ...allQuestions.diabetes
-        ];
-        
-        const shuffledSpecific = shuffleArray(specificSopQuestions);
-        const specificSelection = shuffledSpecific.slice(0, 15);
+      const shuffledGeneral = shuffleArray(allQuestions.general).slice(0, 10);
+      const specific = shuffleArray([...allQuestions.tailoring, ...allQuestions.shg, ...allQuestions.diabetes]).slice(0, 15);
 
-        const finalQuestionPool = [...generalSelection, ...specificSelection];
-        selectedQuestions = shuffleArray(finalQuestionPool);
+      selectedQuestions = shuffleArray([...shuffledGeneral, ...specific]);
 
-        selectedQuestions.forEach((q, index) => {
-            const questionDiv = document.createElement('div');
-            questionDiv.innerHTML = `
-                <h3 class="text-lg font-semibold text-slate-700 mb-4">${index + 1}. ${q.question}</h3>
-                <div class="space-y-3" id="q${index}-options"></div>
-            `;
-            const optionsDiv = questionDiv.querySelector(`#q${index}-options`);
-            shuffleArray(q.choices).forEach((choice, choiceIndex) => {
-                optionsDiv.innerHTML += `
-                    <div class="quiz-option">
-                        <input type="radio" name="question-${index}" value="${choice}" id="q${index}-option${choiceIndex}" class="sr-only">
-                        <label for="q${index}-option${choiceIndex}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer">${choice}</label>
-                    </div>
-                `;
-            });
-            questionsWrapper.appendChild(questionDiv);
+      selectedQuestions.forEach((q, i) => {
+        const qDiv = document.createElement('div');
+        qDiv.innerHTML = \`<h3 class="text-lg font-semibold text-slate-700 mb-4">\${i + 1}. \${q.question}</h3><div class="space-y-3" id="q\${i}-options"></div>\`;
+        const optDiv = qDiv.querySelector(`#q\${i}-options`);
+        shuffleArray(q.choices).forEach((choice, j) => {
+          optDiv.innerHTML += \`
+            <div class="quiz-option">
+              <input type="radio" name="question-\${i}" value="\${choice}" id="q\${i}-option\${j}" class="sr-only">
+              <label for="q\${i}-option\${j}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer">\${choice}</label>
+            </div>
+          \`;
         });
+        questionsWrapper.appendChild(qDiv);
+      });
     }
 
     function submitQuiz() {
       clearInterval(quizTimer);
       let score = 0;
-      selectedQuestions.forEach((q, index) => {
-        const selected = document.querySelector(`input[name="question-${index}"]:checked`);
-        if (selected && selected.value === q.answer) {
-          score++;
-        }
+      selectedQuestions.forEach((q, i) => {
+        const sel = document.querySelector(`input[name="question-\${i}"]:checked`);
+        if (sel && sel.value === q.answer) score++;
       });
-
       const total = selectedQuestions.length;
-      const percent = total > 0 ? (score / total) * 100 : 0;
-
-      saveResultsToSheet({
-        name: localStorage.getItem("employeeName"),
-        id: localStorage.getItem("employeeId"),
-        score: score,
-        total: total,
-        percentage: percent.toFixed(2)
-      });
-      
+      const percent = (score / total) * 100;
+      saveResultsToSheet({ name: localStorage.getItem("employeeName"), id: localStorage.getItem("employeeId"), score, total, percentage: percent.toFixed(2) });
       displayResults(score, total, percent);
     }
 
-    // **FIX 1: More reliable function to save results**
-    function saveResultsToSheet(resultData) {
-      fetch(WEB_APP_URL, {
-        method: "POST",
-        // The header is not needed and can cause issues. The body is sent as text.
-        body: JSON.stringify(resultData),
-        // A 'redirect' header is needed for Google Apps Script POST requests
-        redirect: 'follow'
-      })
-      .then(response => {
-          // Check if the response is OK (status 200-299)
-          if (response.ok) {
-              console.log("Score saved successfully.");
-              return response.json(); // Or .text() if you expect text
-          }
-          // If not OK, throw an error to be caught by the .catch block
-          throw new Error('Failed to save score. Network response was not ok.');
-      })
-      .then(data => console.log('Success response:', data))
-      .catch(error => {
-        console.error("Error while saving score:", error);
-        // This alert will now only trigger on a genuine failure.
-        alert("Your score could not be saved to the sheet, but your result is displayed. Please screenshot this page and contact an administrator.");
-      });
+    function saveResultsToSheet(data) {
+      fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ ...data, action: "submit" }), redirect: 'follow' })
+        .then(res => res.ok ? res.json() : Promise.reject("Failed to save"))
+        .catch(err => alert("Result not saved. Please screenshot your result and contact admin."));
     }
 
     function displayResults(score, total, percent) {
-        document.getElementById('score-text').textContent = `${score} / ${total}`;
-        document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
+      document.getElementById('score-text').textContent = \`\${score} / \${total}\`;
+      document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
+      const fb = document.getElementById('feedback-text');
+      const certDiv = document.getElementById('certificate-download');
+      const retestBtn = document.getElementById('retest-button');
+      certDiv.innerHTML = "";
+      retestBtn.style.display = "none";
 
-        const feedback = document.getElementById('feedback-text');
-        const certDownloadDiv = document.getElementById('certificate-download');
-        const retestButton = document.getElementById('retest-button');
+      if (percent >= PASSING_PERCENTAGE) {
+        fb.textContent = "Excellent! You have a strong understanding of our processes.";
+        fb.className = "text-green-600 font-medium";
+        const today = new Date().toLocaleDateString('en-GB');
+        const name = encodeURIComponent(localStorage.getItem("employeeName"));
+        certDiv.innerHTML = \`<a href="certificate.html?name=\${name}&date=\${today}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>\`;
+      } else {
+        fb.innerHTML = "<p class='text-red-600 font-medium'>ಕ್ಷಮಿಸಿ, ನೀವು ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಉತ್ತೀರ್ಣರಾಗಿಲ್ಲ.</p><p class='text-slate-600 mt-2'>ದಯವಿಟ್ಟು SOP ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</p>";
+        retestBtn.style.display = "inline-block";
+      }
 
-        certDownloadDiv.innerHTML = "";
-        retestButton.style.display = "none";
-
-        if (percent >= PASSING_PERCENTAGE) {
-            feedback.textContent = "Excellent! You have a strong understanding of our processes.";
-            feedback.className = "text-green-600 font-medium";
-            const today = new Date().toLocaleDateString('en-GB');
-            const name = encodeURIComponent(localStorage.getItem("employeeName"));
-            certDownloadDiv.innerHTML = `<a href="certificate.html?name=${name}&date=${today}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`;
-        } else {
-            // **FIX 3: Restored Kannada feedback for failed staff**
-            feedback.innerHTML = `
-                <p class="text-red-600 font-medium">ಕ್ಷಮಿಸಿ, ನೀವು ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಉತ್ತೀರ್ಣರಾಗಿಲ್ಲ.</p>
-                <p class="text-slate-600 mt-2">ದಯವಿಟ್ಟು SOP ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</p>
-            `;
-            retestButton.style.display = "inline-block";
-        }
-
-        quizScreen.classList.add('hidden');
-        resultScreen.classList.remove('hidden');
+      quizScreen.classList.add('hidden');
+      resultScreen.classList.remove('hidden');
     }
 
     function restartQuiz() {
@@ -288,14 +244,12 @@
     }
 
     function startTimer(seconds) {
-      const timerDisplay = document.getElementById("timer");
+      const timer = document.getElementById("timer");
       let remaining = seconds;
-      
       quizTimer = setInterval(() => {
         const m = Math.floor(remaining / 60);
         const s = String(remaining % 60).padStart(2, '0');
-        timerDisplay.textContent = `Time Left: ${m}:${s}`;
-        
+        timer.textContent = \`Time Left: \${m}:\${s}\`;
         if (remaining-- <= 0) {
           clearInterval(quizTimer);
           alert("Time's up! Submitting your answers now.");
