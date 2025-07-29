@@ -20,11 +20,15 @@
   </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+
   <div id="quiz-container" class="w-full max-w-3xl mx-auto">
+
+    <!-- Logo -->
     <div class="text-center mb-4">
       <img src="Logo.png" alt="Seva Vasati Logo" class="h-20 mx-auto" onerror="this.src='https://placehold.co/200x80/ffffff/333333?text=Logo'"/>
     </div>
 
+    <!-- Start Screen -->
     <div id="start-screen" class="bg-white p-8 rounded-xl shadow-lg text-center">
       <h1 id="quiz-title" class="text-3xl font-bold text-slate-800 mb-4"></h1>
       <p class="text-slate-600 mb-2">ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ:</p>
@@ -38,6 +42,7 @@
       </button>
     </div>
 
+    <!-- Quiz Screen -->
     <div id="quiz-screen" class="hidden">
       <div class="bg-white p-8 rounded-xl shadow-lg">
         <div class="flex justify-between items-center mb-4">
@@ -53,6 +58,7 @@
       </div>
     </div>
 
+    <!-- Result Screen -->
     <div id="result-screen" class="hidden">
       <div class="bg-white p-8 rounded-xl shadow-lg text-center">
         <h2 class="text-3xl font-bold text-slate-800 mb-4">Test Complete!</h2>
@@ -69,8 +75,9 @@
   </div>
 
   <script src="questions.js"></script>
+
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmsyQmElQj8ttMSYFsVEWOpG_r7ycjWiJRQ_wxuDfiSWxDFexNaHVQSvGW_iskJwb_/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx7c_AdfCW9Jk6Ya039fXCacLoKSZct8G0uoUeAm_Bm-lN78hQW54fphw78WIW1mVSg/exec";
     const PILOT_PROJECT_KEY = "seva_vasati";
     const NUMBER_OF_QUESTIONS_TO_SELECT = 25;
     const PASSING_PERCENTAGE = 80;
@@ -159,9 +166,10 @@
       fetch(WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify({ action: "log_download", id })
-      }).then(res => res.json())
-        .then(data => console.log("Certificate logged:", data))
-        .catch(err => console.error("Logging error:", err));
+      })
+      .then(res => res.json())
+      .then(data => console.log("Certificate download logged:", data))
+      .catch(err => console.error("Error logging certificate download:", err));
     }
 
     function shuffleArray(array) {
@@ -175,64 +183,86 @@
       document.getElementById('quiz-header').textContent = project.title;
       questionsWrapper.innerHTML = '';
 
-      const shuffledGeneral = shuffleArray(allQuestions.general).slice(0, 10);
-      const specific = shuffleArray([...allQuestions.tailoring, ...allQuestions.shg, ...allQuestions.diabetes]).slice(0, 15);
+      const general = shuffleArray(allQuestions.general).slice(0, 10);
+      const sop = shuffleArray([...allQuestions.tailoring, ...allQuestions.shg, ...allQuestions.diabetes]).slice(0, 15);
+      selectedQuestions = shuffleArray([...general, ...sop]);
 
-      selectedQuestions = shuffleArray([...shuffledGeneral, ...specific]);
-
-      selectedQuestions.forEach((q, i) => {
-        const qDiv = document.createElement('div');
-        qDiv.innerHTML = \`<h3 class="text-lg font-semibold text-slate-700 mb-4">\${i + 1}. \${q.question}</h3><div class="space-y-3" id="q\${i}-options"></div>\`;
-        const optDiv = qDiv.querySelector(`#q\${i}-options`);
+      selectedQuestions.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <h3 class="text-lg font-semibold text-slate-700 mb-4">${index + 1}. ${q.question}</h3>
+          <div class="space-y-3" id="q${index}-options"></div>`;
+        const optDiv = div.querySelector(`#q${index}-options`);
         shuffleArray(q.choices).forEach((choice, j) => {
-          optDiv.innerHTML += \`
+          optDiv.innerHTML += `
             <div class="quiz-option">
-              <input type="radio" name="question-\${i}" value="\${choice}" id="q\${i}-option\${j}" class="sr-only">
-              <label for="q\${i}-option\${j}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer">\${choice}</label>
-            </div>
-          \`;
+              <input type="radio" name="question-${index}" value="${choice}" id="q${index}-option${j}" class="sr-only">
+              <label for="q${index}-option${j}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer">${choice}</label>
+            </div>`;
         });
-        questionsWrapper.appendChild(qDiv);
+        questionsWrapper.appendChild(div);
       });
     }
 
     function submitQuiz() {
       clearInterval(quizTimer);
       let score = 0;
-      selectedQuestions.forEach((q, i) => {
-        const sel = document.querySelector(`input[name="question-\${i}"]:checked`);
-        if (sel && sel.value === q.answer) score++;
+      selectedQuestions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+        if (selected && selected.value === q.answer) score++;
       });
+
       const total = selectedQuestions.length;
       const percent = (score / total) * 100;
-      saveResultsToSheet({ name: localStorage.getItem("employeeName"), id: localStorage.getItem("employeeId"), score, total, percentage: percent.toFixed(2) });
+
+      saveResultsToSheet({
+        name: localStorage.getItem("employeeName"),
+        id: localStorage.getItem("employeeId"),
+        score: score,
+        total: total,
+        percentage: percent.toFixed(2),
+        action: "submit"
+      });
+
       displayResults(score, total, percent);
     }
 
-    function saveResultsToSheet(data) {
-      fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ ...data, action: "submit" }), redirect: 'follow' })
-        .then(res => res.ok ? res.json() : Promise.reject("Failed to save"))
-        .catch(err => alert("Result not saved. Please screenshot your result and contact admin."));
+    function saveResultsToSheet(resultData) {
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(resultData),
+        redirect: 'follow'
+      })
+      .then(res => res.json())
+      .then(data => console.log("Saved:", data))
+      .catch(error => {
+        console.error("Error saving result:", error);
+        alert("Could not save result. Please take a screenshot and inform the admin.");
+      });
     }
 
     function displayResults(score, total, percent) {
-      document.getElementById('score-text').textContent = \`\${score} / \${total}\`;
+      document.getElementById('score-text').textContent = `${score} / ${total}`;
       document.getElementById('result-quiz-title').textContent = projectQuizzes[PILOT_PROJECT_KEY].title;
-      const fb = document.getElementById('feedback-text');
+
+      const feedback = document.getElementById('feedback-text');
       const certDiv = document.getElementById('certificate-download');
-      const retestBtn = document.getElementById('retest-button');
+      const retestButton = document.getElementById('retest-button');
+
       certDiv.innerHTML = "";
-      retestBtn.style.display = "none";
+      retestButton.style.display = "none";
 
       if (percent >= PASSING_PERCENTAGE) {
-        fb.textContent = "Excellent! You have a strong understanding of our processes.";
-        fb.className = "text-green-600 font-medium";
+        feedback.textContent = "Excellent! You have a strong understanding of our processes.";
+        feedback.className = "text-green-600 font-medium";
         const today = new Date().toLocaleDateString('en-GB');
         const name = encodeURIComponent(localStorage.getItem("employeeName"));
-        certDiv.innerHTML = \`<a href="certificate.html?name=\${name}&date=\${today}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>\`;
+        certDiv.innerHTML = `<a href="certificate.html?name=${name}&date=${today}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`;
       } else {
-        fb.innerHTML = "<p class='text-red-600 font-medium'>ಕ್ಷಮಿಸಿ, ನೀವು ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಉತ್ತೀರ್ಣರಾಗಿಲ್ಲ.</p><p class='text-slate-600 mt-2'>ದಯವಿಟ್ಟು SOP ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</p>";
-        retestBtn.style.display = "inline-block";
+        feedback.innerHTML = `
+          <p class="text-red-600 font-medium">ಕ್ಷಮಿಸಿ, ನೀವು ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಉತ್ತೀರ್ಣರಾಗಿಲ್ಲ.</p>
+          <p class="text-slate-600 mt-2">ದಯವಿಟ್ಟು SOP ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</p>`;
+        retestButton.style.display = "inline-block";
       }
 
       quizScreen.classList.add('hidden');
@@ -246,10 +276,12 @@
     function startTimer(seconds) {
       const timer = document.getElementById("timer");
       let remaining = seconds;
+
       quizTimer = setInterval(() => {
         const m = Math.floor(remaining / 60);
         const s = String(remaining % 60).padStart(2, '0');
-        timer.textContent = \`Time Left: \${m}:\${s}\`;
+        timer.textContent = `Time Left: ${m}:${s}`;
+
         if (remaining-- <= 0) {
           clearInterval(quizTimer);
           alert("Time's up! Submitting your answers now.");
