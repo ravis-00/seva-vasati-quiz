@@ -108,14 +108,23 @@
         return;
       }
 
-      const eligibility = await checkEligibilityFromGoogleSheet(id);
+      // Show a temporary loading message
+      const startButton = document.querySelector('#start-screen button');
+      startButton.disabled = true;
+      startButton.textContent = 'Checking...';
 
+      const eligibility = await checkEligibilityFromGoogleSheet(id);
+      
+      startButton.disabled = false;
+      startButton.textContent = 'Start Test';
+
+      // **FIX 2: Correctly block users who have already passed**
       if (eligibility && eligibility.score >= PASSING_PERCENTAGE) {
         document.body.innerHTML = `
           <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-auto">
-            <h2 class="text-2xl font-bold text-green-600">You’ve Already Passed!</h2>
-            <p class="mt-4 text-slate-600">You have already passed this test with a score of <strong>${eligibility.score}%</strong>. A retest is not required.</p>
-            <p class="mt-2 text-sm text-slate-500">Please contact an administrator if you believe this is an error.</p>
+            <h2 class="text-2xl font-bold text-green-600">You Have Already Passed!</h2>
+            <p class="mt-4 text-slate-600">ನೀವು ಈಗಾಗಲೇ ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ <strong>${eligibility.score}%</strong> ಅಂಕಗಳೊಂದಿಗೆ ಉತ್ತೀರ್ಣರಾಗಿದ್ದೀರಿ. ಮರುಪರೀಕ್ಷೆಯ ಅಗತ್ಯವಿಲ್ಲ.</p>
+            <p class="mt-2 text-sm text-slate-500">ಇದು ತಪ್ಪಾಗಿದ್ದರೆ ದಯವಿಟ್ಟು ನಿರ್ವಾಹಕರನ್ನು ಸಂಪರ್ಕಿಸಿ.</p>
           </div>
         `;
         return;
@@ -134,17 +143,18 @@
       try {
         const response = await fetch(`${WEB_APP_URL}?id=${encodeURIComponent(id)}`);
         if (!response.ok) {
+            // This will catch HTTP errors like 404 or 500
             throw new Error(`Network response was not ok: ${response.statusText}`);
         }
         const data = await response.json();
         if (data?.status === "found") {
           return { score: parseFloat(data.score) };
         }
-        return null;
+        return null; // Return null if not found
       } catch (error) {
         console.error("Error checking eligibility:", error);
         alert("Could not check eligibility. Please check your connection or contact an admin.");
-        return null;
+        return null; // Ensure it returns null on error
       }
     }
     
@@ -158,68 +168,43 @@
         const questionsWrapper = document.getElementById('questions-wrapper');
         document.getElementById('quiz-header').textContent = project.title;
         questionsWrapper.innerHTML = '';
-
-        // --- NEW QUESTION SELECTION LOGIC ---
         
-        // 1. Select 10 questions from the General SOP category
         const shuffledGeneral = shuffleArray(allQuestions.general);
         const generalSelection = shuffledGeneral.slice(0, 10);
 
-        // 2. Combine all other specific SOP categories
         const specificSopQuestions = [
             ...allQuestions.tailoring,
             ...allQuestions.shg,
             ...allQuestions.diabetes
         ];
         
-        // 3. Select 15 questions from the combined specific SOPs
         const shuffledSpecific = shuffleArray(specificSopQuestions);
         const specificSelection = shuffledSpecific.slice(0, 15);
 
-        // 4. Combine the two selections and shuffle them for the final quiz order
         const finalQuestionPool = [...generalSelection, ...specificSelection];
         selectedQuestions = shuffleArray(finalQuestionPool);
-        
-        // --- END OF NEW LOGIC ---
 
         selectedQuestions.forEach((q, index) => {
             const questionDiv = document.createElement('div');
-            const questionTitle = document.createElement('h3');
-            questionTitle.className = 'text-lg font-semibold text-slate-700 mb-4';
-            questionTitle.textContent = `${index + 1}. ${q.question}`;
-            questionDiv.appendChild(questionTitle);
-
-            const optionsDiv = document.createElement('div');
-            optionsDiv.className = 'space-y-3';
-
-            // Shuffle choices for each question
+            questionDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">${index + 1}. ${q.question}</h3>
+                <div class="space-y-3" id="q${index}-options"></div>
+            `;
+            const optionsDiv = questionDiv.querySelector(`#q${index}-options`);
             shuffleArray(q.choices).forEach((choice, choiceIndex) => {
-                const optionWrapper = document.createElement('div');
-                optionWrapper.className = 'quiz-option';
-                const input = document.createElement('input');
-                input.type = 'radio';
-                input.name = `question-${index}`;
-                input.value = choice;
-                input.id = `q${index}-option${choiceIndex}`;
-                input.className = 'sr-only';
-
-                const label = document.createElement('label');
-                label.htmlFor = input.id;
-                label.textContent = choice;
-                label.className = 'block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer';
-
-                optionWrapper.appendChild(input);
-                optionWrapper.appendChild(label);
-                optionsDiv.appendChild(optionWrapper);
+                optionsDiv.innerHTML += `
+                    <div class="quiz-option">
+                        <input type="radio" name="question-${index}" value="${choice}" id="q${index}-option${choiceIndex}" class="sr-only">
+                        <label for="q${index}-option${choiceIndex}" class="block w-full p-4 border-2 border-slate-200 rounded-lg cursor-pointer">${choice}</label>
+                    </div>
+                `;
             });
-
-            questionDiv.appendChild(optionsDiv);
             questionsWrapper.appendChild(questionDiv);
         });
     }
 
     function submitQuiz() {
-      clearInterval(quizTimer); // Stop the timer
+      clearInterval(quizTimer);
       let score = 0;
       selectedQuestions.forEach((q, index) => {
         const selected = document.querySelector(`input[name="question-${index}"]:checked`);
@@ -231,7 +216,6 @@
       const total = selectedQuestions.length;
       const percent = total > 0 ? (score / total) * 100 : 0;
 
-      // Save data to Google Sheet
       saveResultsToSheet({
         name: localStorage.getItem("employeeName"),
         id: localStorage.getItem("employeeId"),
@@ -243,20 +227,28 @@
       displayResults(score, total, percent);
     }
 
+    // **FIX 1: More reliable function to save results**
     function saveResultsToSheet(resultData) {
       fetch(WEB_APP_URL, {
         method: "POST",
+        // The header is not needed and can cause issues. The body is sent as text.
         body: JSON.stringify(resultData),
-        // Adding `mode: 'no-cors'` can sometimes help with opaque responses,
-        // but the primary fix should be a correctly deployed Apps Script.
+        // A 'redirect' header is needed for Google Apps Script POST requests
+        redirect: 'follow'
       })
       .then(response => {
-          // Since we might get an opaque response, we can't read the body here.
-          // We will optimistically assume it worked if no network error was thrown.
-          console.log("Score submission attempted.");
+          // Check if the response is OK (status 200-299)
+          if (response.ok) {
+              console.log("Score saved successfully.");
+              return response.json(); // Or .text() if you expect text
+          }
+          // If not OK, throw an error to be caught by the .catch block
+          throw new Error('Failed to save score. Network response was not ok.');
       })
+      .then(data => console.log('Success response:', data))
       .catch(error => {
         console.error("Error while saving score:", error);
+        // This alert will now only trigger on a genuine failure.
         alert("Your score could not be saved to the sheet, but your result is displayed. Please screenshot this page and contact an administrator.");
       });
     }
@@ -269,8 +261,8 @@
         const certDownloadDiv = document.getElementById('certificate-download');
         const retestButton = document.getElementById('retest-button');
 
-        certDownloadDiv.innerHTML = ""; // Clear previous state
-        retestButton.style.display = "none"; // Hide by default
+        certDownloadDiv.innerHTML = "";
+        retestButton.style.display = "none";
 
         if (percent >= PASSING_PERCENTAGE) {
             feedback.textContent = "Excellent! You have a strong understanding of our processes.";
@@ -279,8 +271,11 @@
             const name = encodeURIComponent(localStorage.getItem("employeeName"));
             certDownloadDiv.innerHTML = `<a href="certificate.html?name=${name}&date=${today}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold">Download Certificate</a>`;
         } else {
-            feedback.textContent = "A review of the processes is recommended. Please try again.";
-            feedback.className = "text-red-600 font-medium";
+            // **FIX 3: Restored Kannada feedback for failed staff**
+            feedback.innerHTML = `
+                <p class="text-red-600 font-medium">ಕ್ಷಮಿಸಿ, ನೀವು ಈ ಪರೀಕ್ಷೆಯಲ್ಲಿ ಉತ್ತೀರ್ಣರಾಗಿಲ್ಲ.</p>
+                <p class="text-slate-600 mt-2">ದಯವಿಟ್ಟು SOP ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</p>
+            `;
             retestButton.style.display = "inline-block";
         }
 
